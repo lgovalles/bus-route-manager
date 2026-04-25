@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+
 class StopBase(BaseModel):
     name: str = Field(..., min_length=1)
     latitude: float = Field(..., ge=-90, le=90)
@@ -15,16 +16,20 @@ class StopBase(BaseModel):
             return stripped
         return v
 
+
 class StopCreate(StopBase):
     pass
+
 
 class Stop(StopBase):
     id: int
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class StopInRoute(Stop):
     """Stop with order information when retrieved from a route"""
+
     stop_order: int = Field(..., ge=0)
 
     model_config = ConfigDict(from_attributes=True)

@@ -173,7 +173,7 @@ jobs:
         with:
           context: ./frontend
           push: false
-          dockerfile: ./frontend/Dockerfile
+          file: ./frontend/Dockerfile
           tags: bus-route-manager:frontend-${{ github.sha }}
 
   # ============================================

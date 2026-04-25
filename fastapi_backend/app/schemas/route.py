@@ -1,12 +1,12 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing import Optional, List
+
 
 class RouteBase(BaseModel):
     name: str = Field(..., min_length=1)
     code: str = Field(..., min_length=1)
-    color: Optional[str] = None
-    description: Optional[str] = None
-    type: Optional[str] = None
+    color: str | None = None
+    description: str | None = None
+    type: str | None = None
 
     @field_validator("name", "code", mode="before")
     @classmethod
@@ -18,8 +18,10 @@ class RouteBase(BaseModel):
             return stripped
         return v
 
+
 class RouteCreate(RouteBase):
     pass
+
 
 class Route(RouteBase):
     id: int

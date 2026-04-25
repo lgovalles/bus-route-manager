@@ -9,7 +9,6 @@ from .database import Base, engine
 from .routers import route_stops, routes, stops
 from .settings import load_env_file
 
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -48,6 +47,7 @@ Base.metadata.create_all(bind=engine)
 app.include_router(routes.router)
 app.include_router(stops.router)
 app.include_router(route_stops.router)
+
 
 @app.get("/")
 async def root():

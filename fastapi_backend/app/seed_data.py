@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from app.models import Route, Stop, RouteStop
+from app.models import Route, RouteStop, Stop
 
 STOPS_DATA = {
     "Cuatro Esquinas": {"latitude": 6.1718, "longitude": -75.3715},
