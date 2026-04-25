@@ -1,6 +1,6 @@
 """Tests for domain models"""
-import pytest
-from app.models import Route, Stop, RouteStop
+
+from app.models import Route, RouteStop, Stop
 
 
 def test_create_models(db_session):

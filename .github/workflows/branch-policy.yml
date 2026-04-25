@@ -1,0 +1,136 @@
+name: Branch Policy Enforcement
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  validate-branch-policy:
+    name: Validate Branch Strategy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check branch naming and target rules
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const head = context.payload.pull_request.head.ref;   // rama origen
+            const base = context.payload.pull_request.base.ref;   // rama destino
+
+            console.log(`PR: ${head}  →  ${base}`);
+
+            // ─── Reglas permitidas ────────────────────────────────────────
+            //
+            //  main
+            //  └── develop
+            //      ├── feature/*
+            //      ├── bugfix/*
+            //      └── refactor/*
+            //
+            //  release/*   →  main   (o develop para integración previa)
+            //  hotfix/*    →  main
+            //
+            // ─────────────────────────────────────────────────────────────
+
+            const rules = [
+              // features, bugfixes y refactors solo pueden apuntar a develop
+              {
+                pattern: /^(feature|bugfix|refactor)\/.+/,
+                allowedBases: ['develop'],
+                description: '`feature/*`, `bugfix/*` y `refactor/*` deben apuntar a **develop**',
+              },
+              // develop solo puede mergear a main
+              {
+                pattern: /^develop$/,
+                allowedBases: ['main'],
+                description: '`develop` solo puede apuntar a **main**',
+              },
+              // releases pueden ir a main (o develop para QA previo)
+              {
+                pattern: /^release\/.+/,
+                allowedBases: ['main', 'develop'],
+                description: '`release/*` debe apuntar a **main** o **develop**',
+              },
+              // hotfixes solo van a main
+              {
+                pattern: /^hotfix\/.+/,
+                allowedBases: ['main'],
+                description: '`hotfix/*` debe apuntar a **main**',
+              },
+            ];
+
+            // --- Nombre válido de la rama ----------------------------------
+            const namingPattern = /^(main|develop|(feature|bugfix|refactor|release|hotfix)\/.+)$/;
+            if (!namingPattern.test(head)) {
+              const message = [
+                '## ERROR: Nombre de rama inválido',
+                '',
+                `La rama \`${head}\` no sigue la convención de nombres del proyecto.`,
+                '',
+                '### Formato permitido',
+                '| Tipo | Patrón | Apunta a |',
+                '|------|--------|----------|',
+                '| Feature | `feature/<nombre-descriptivo>` | `develop` |',
+                '| Bugfix | `bugfix/<nombre-o-ticket>` | `develop` |',
+                '| Refactor | `refactor/<nombre-descriptivo>` | `develop` |',
+                '| Release | `release/<version>` | `main` |',
+                '| Hotfix | `hotfix/<nombre-o-ticket>` | `main` |',
+                '',
+                '**Ejemplo correcto:** `feature/add-route-stops`, `bugfix/fix-map-tiles`, `hotfix/db-connection-leak`',
+              ].join('\n');
+
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: message,
+              });
+
+              core.setFailed(`Nombre de rama invalido: "${head}". Usa feature/*, bugfix/*, refactor/*, release/*, hotfix/*`);
+              return;
+            }
+
+            // --- Destino permitido para la rama ----------------------------------
+            for (const rule of rules) {
+              if (rule.pattern.test(head)) {
+                if (!rule.allowedBases.includes(base)) {
+                  const message = [
+                    '## ERROR: Destino de PR incorrecto',
+                    '',
+                    `El PR de \`${head}\` → \`${base}\` viola la política de ramas del proyecto.`,
+                    '',
+                    `**Regla:** ${rule.description}`,
+                    '',
+                    '### Estrategia de ramas',
+                    '```',
+                    'main',
+                    '└── develop',
+                    '    ├── feature/*     →  develop',
+                    '    ├── bugfix/*      →  develop',
+                    '    └── refactor/*   →  develop',
+                    '',
+                    'release/*             →  main',
+                    'hotfix/*              →  main',
+                    '```',
+                    '',
+                    `**Acción requerida:** Cambia el destino del PR de \`${base}\` a \`${rule.allowedBases.join('` o `')}\`.`,
+                  ].join('\n');
+
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.payload.pull_request.number,
+                    body: message,
+                  });
+
+                  core.setFailed(`Branch policy violated: "${head}" must target [${rule.allowedBases.join(', ')}] but targets "${base}"`);
+                }
+                return;
+              }
+            }
+
+            console.log(`OK: Branch policy passed: "${head}" -> "${base}"`); 
