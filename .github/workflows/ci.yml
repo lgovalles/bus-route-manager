@@ -208,7 +208,7 @@ jobs:
   # Success Check
   # ============================================
   all-checks-passed:
-    name: All Checks Passed ✅
+    name: All Checks Passed
     runs-on: ubuntu-latest
     needs: [backend-test, frontend-test, security, docker-build, dependency-check]
     if: always()
@@ -217,23 +217,23 @@ jobs:
       - name: Check if all jobs passed
         run: |
           if [ "${{ needs.backend-test.result }}" != "success" ]; then
-            echo "❌ Backend tests failed"
+            echo "FAIL: Backend tests failed"
             exit 1
           fi
           if [ "${{ needs.frontend-test.result }}" != "success" ]; then
-            echo "❌ Frontend tests failed"
+            echo "FAIL: Frontend tests failed"
             exit 1
           fi
           if [ "${{ needs.security.result }}" != "success" ]; then
-            echo "⚠️ Security scan failed"
+            echo "FAIL: Security scan failed"
             exit 1
           fi
           if [ "${{ needs.docker-build.result }}" != "success" ]; then
-            echo "❌ Docker build failed"
+            echo "FAIL: Docker build failed"
             exit 1
           fi
           if [ "${{ needs.dependency-check.result }}" != "success" ]; then
-            echo "❌ Dependency check failed"
+            echo "FAIL: Dependency check failed"
             exit 1
           fi
-          echo "✅ All checks passed!"
+          echo "OK: All checks passed"

@@ -63,11 +63,11 @@ jobs:
               },
             ];
 
-            // ─── Nombre válido de la rama ─────────────────────────────────
+            // --- Nombre válido de la rama ----------------------------------
             const namingPattern = /^(main|develop|(feature|bugfix|refactor|release|hotfix)\/.+)$/;
             if (!namingPattern.test(head)) {
               const message = [
-                '## ❌ Nombre de rama inválido',
+                '## ERROR: Nombre de rama inválido',
                 '',
                 `La rama \`${head}\` no sigue la convención de nombres del proyecto.`,
                 '',
@@ -90,16 +90,16 @@ jobs:
                 body: message,
               });
 
-              core.setFailed(`Nombre de rama inválido: "${head}". Usa feature/*, bugfix/*, refactor/*, release/*, hotfix/*`);
+              core.setFailed(`Nombre de rama invalido: "${head}". Usa feature/*, bugfix/*, refactor/*, release/*, hotfix/*`);
               return;
             }
 
-            // ─── Destino permitido para la rama ───────────────────────────
+            // --- Destino permitido para la rama ----------------------------------
             for (const rule of rules) {
               if (rule.pattern.test(head)) {
                 if (!rule.allowedBases.includes(base)) {
                   const message = [
-                    '## ❌ Destino de PR incorrecto',
+                    '## ERROR: Destino de PR incorrecto',
                     '',
                     `El PR de \`${head}\` → \`${base}\` viola la política de ramas del proyecto.`,
                     '',
@@ -133,4 +133,4 @@ jobs:
               }
             }
 
-            console.log(`✅ Branch policy OK: "${head}" → "${base}"`);
+            console.log(`OK: Branch policy passed: "${head}" -> "${base}"`); 
