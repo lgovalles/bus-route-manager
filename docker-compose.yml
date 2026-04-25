@@ -1,0 +1,71 @@
+version: '3.9'
+
+services:
+  # === PostgreSQL Database ===
+  db:
+    image: postgres:16-alpine
+    container_name: bus-db-dev
+    environment:
+      POSTGRES_USER: busadmin
+      POSTGRES_PASSWORD: busdevel@2026
+      POSTGRES_DB: bus_routes
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U busadmin -d bus_routes"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bus-network
+
+  # === FastAPI Backend ===
+  backend:
+    build:
+      context: ./fastapi_backend
+      dockerfile: Dockerfile
+    container_name: bus-backend-dev
+    environment:
+      DATABASE_URL: postgresql://busadmin:busdevel@2026@db:5432/bus_routes
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000,http://frontend:3000
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./fastapi_backend/app:/app/app
+    networks:
+      - bus-network
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  # === React Frontend ===
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: bus-frontend-dev
+    environment:
+      VITE_API_BASE_URL: http://backend:8000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+    networks:
+      - bus-network
+    command: npm run dev -- --host
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  bus-network:
+    driver: bridge
