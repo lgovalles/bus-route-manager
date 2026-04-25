@@ -37,7 +37,6 @@ RUN pip install --no-cache /wheels/*
 # Copiar código de la aplicación
 COPY app/ ./app
 COPY seed.py .
-COPY seed_data.py .
 
 # Cambiar propiedad de archivos
 RUN chown -R appuser:appuser /app
