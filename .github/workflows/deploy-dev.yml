@@ -99,7 +99,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: ./frontend
-          dockerfile: ./frontend/Dockerfile
+          file: ./frontend/Dockerfile
           push: true
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
@@ -159,18 +159,6 @@ jobs:
           done
           echo "❌ API failed to start"
           exit 1
-
-      - name: Create Deployment Status
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.repos.createDeploymentStatus({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              deployment_id: context.payload.deployment.id,
-              state: 'success',
-              environment_url: '${{ secrets.DEV_API_URL }}'
-            });
 
   # ============================================
   # Notification
